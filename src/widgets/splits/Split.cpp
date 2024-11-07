@@ -330,6 +330,11 @@ Split::Split(QWidget *parent)
             }
         },
         this->signalHolder_);
+    getSettings()->showTextInputPlaceholder.connect(
+        [this]() {
+            this->updateInputPlaceholder();
+        },
+        this->signalHolder_);
 
     this->header_->updateIcons();
     this->overlay_->hide();
@@ -845,13 +850,13 @@ void Split::updateInputPlaceholder()
     {
         placeholderText = "Log in to send messages...";
     }
-    else
+    else if (getSettings()->showTextInputPlaceholder)
     {
-        placeholderText = QString("Send message as %1...")
-                              .arg(getApp()
-                                       ->getAccounts()
-                                       ->twitch.getCurrent()
-                                       ->getUserName());
+        placeholderText =
+            QString("Send message as %1 in %2...")
+                .arg(
+                    getApp()->getAccounts()->twitch.getCurrent()->getUserName(),
+                    this->getChannel()->getName());
     }
 
     this->input_->ui_.textEdit->setPlaceholderText(placeholderText);
