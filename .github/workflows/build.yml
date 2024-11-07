@@ -4,7 +4,7 @@ name: Build
 on:
   push:
     branches:
-      - chatterino7
+      - patcherino
       - "bugfix-release/**"
       - "release/*"
   pull_request:
@@ -16,7 +16,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  C2_ENABLE_LTO: ${{ github.ref == 'refs/heads/chatterino7' || startsWith(github.ref, 'refs/heads/bugfix-release') || startsWith(github.ref, 'refs/heads/release/')}}
+  C2_ENABLE_LTO: ${{ github.ref == 'refs/heads/patcherino' || startsWith(github.ref, 'refs/heads/bugfix-release') || startsWith(github.ref, 'refs/heads/release/')}}
   CHATTERINO_REQUIRE_CLEAN_GIT: On
   C2_BUILD_WITH_QT6: Off
   # Last known good conan version
@@ -367,7 +367,7 @@ jobs:
   create-release:
     needs: [build-ubuntu-docker, build]
     runs-on: ubuntu-latest
-    if: (github.event_name == 'push' && github.ref == 'refs/heads/chatterino7')
+    if: (github.event_name == 'push' && github.ref == 'refs/heads/patcherino')
 
     steps:
       - uses: actions/checkout@v4

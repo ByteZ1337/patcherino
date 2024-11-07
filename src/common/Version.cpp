@@ -49,7 +49,7 @@ Version::Version()
     , isRunningInRosetta_(runningInRosetta())
 #endif
 {
-    this->fullVersion_ = "Chatterino ";
+    this->fullVersion_ = "Patcherino ";
     if (Modes::instance().isNightly)
     {
         this->fullVersion_ += "Nightly ";
