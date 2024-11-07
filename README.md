@@ -1,3 +1,13 @@
+Chatterino fork with all the other forks combined features + my own. Features taken from:
+
+- [Chatterino](https://github.com/Chatterino/chatterino2) (Original)
+- [Chatterino7](https://github.com/SevenTV/chatterino7) (Upstream)
+- [Technorino](https://github.com/2547techno/technorino)
+- [Forserino](https://github.com/felyp7/Forserino)
+- [Dankerino](https://github.com/Mm2PL/dankerino)
+
+### Features
+
 ![chatterinoLogo](https://user-images.githubusercontent.com/41973452/272541622-52457e89-5f16-4c83-93e7-91866c25b606.png)
 Chatterino7 [![GitHub Actions Build (Windows, Ubuntu, MacOS)](https://github.com/SevenTV/chatterino7/workflows/Build/badge.svg?branch=chatterino7)](https://github.com/SevenTV/chatterino7/actions?query=workflow%3ABuild+branch%3Achatterino7) [![Chocolatey Package](https://img.shields.io/chocolatey/v/chatterino7?include_prereleases)](https://chocolatey.org/packages/chatterino7)
 ============
