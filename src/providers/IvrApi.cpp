@@ -31,6 +31,28 @@ void IvrApi::getSubage(QString userName, QString channelName,
         .execute();
 }
 
+void IvrApi::getUserData(QString userName,
+                         ResultCallback<IvrResolve> resultCallback,
+                         IvrFailureCallback failureCallback)
+{
+    assert(!userName.isEmpty());
+
+    this->makeRequest(QString("twitch/user"),
+                      QUrlQuery(QString("login=%1").arg(userName)))
+        .onSuccess([resultCallback, failureCallback](auto result) {
+            auto root = result.parseJsonArray();
+
+            resultCallback(root);
+        })
+        .onError([failureCallback](auto result) {
+            qCWarning(chatterinoIvr)
+                << "Failed IVR API Call!" << result.formatError()
+                << QString(result.getData());
+            failureCallback();
+        })
+        .execute();
+}
+
 NetworkRequest IvrApi::makeRequest(QString url, QUrlQuery urlQuery)
 {
     assert(!url.startsWith("/"));

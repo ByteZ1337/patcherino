@@ -406,6 +406,13 @@ UserInfoPopup::UserInfoPopup(bool closeAutomatically, Split *split)
                 this->ui_.userIDLabel = addCopyableLabel(box, "Copy ID");
                 this->ui_.userIDLabel->setPalette(palette);
 
+                if (getSettings()->showUserColor)
+                {
+                    this->ui_.userColorLabel =
+                        addCopyableLabel(box, "Copy Color");
+                    this->ui_.userColorLabel->setPalette(palette);
+                }
+
                 this->ui_.localizedNameLabel->setVisible(false);
                 this->ui_.localizedNameCopyButton->setVisible(false);
 
@@ -428,6 +435,18 @@ UserInfoPopup::UserInfoPopup(bool closeAutomatically, Split *split)
                 .assign(&this->ui_.createdDateLabel);
             vbox.emplace<Label>("").assign(&this->ui_.followageLabel);
             vbox.emplace<Label>("").assign(&this->ui_.subageLabel);
+            if (getSettings()->showUserBio)
+            {
+                vbox.emplace<Label>("").assign(&this->ui_.userBioLabel);
+            }
+            if (getSettings()->showBannedReason)
+            {
+                vbox.emplace<Label>("").assign(&this->ui_.bannedReasonLabel);
+            }
+            if (getSettings()->showUserRoles)
+            {
+                vbox.emplace<Label>("").assign(&this->ui_.rolesLabel);
+            }
         }
     }
 
@@ -855,25 +874,91 @@ void UserInfoPopup::updateUserData()
     std::weak_ptr<bool> hack = this->lifetimeHack_;
     auto currentUser = getApp()->getAccounts()->twitch.getCurrent();
 
-    const auto onUserFetchFailed = [this, hack] {
+    // Define success and failure handlers for fetching user color
+    auto userColorSuccess = [this, hack](const HelixColor &color) {
+        if (!hack.lock())
+        {
+            return;
+        }
+        if (!color.userColor.isEmpty())
+        {
+            this->ui_.userColorLabel->setText(QString("Color: ") +
+                                              color.userColor);
+        }
+        else
+        {
+            this->ui_.userColorLabel->setText(QString("Color: Default/None"));
+        }
+        this->ui_.userColorLabel->setProperty("copy-text", color.userColor);
+    };
+
+    auto userColorFailure = [this]() {
+        this->ui_.userColorLabel->setText(QString("Color: Default/None"));
+    };
+
+    // Handler for user fetch failure
+    const auto onUserFetchFailed = [this, hack, userColorSuccess,
+                                    userColorFailure] {
         if (!hack.lock())
         {
             return;
         }
 
-        // this can occur when the account doesn't exist.
-        this->ui_.followerCountLabel->setText(
-            TEXT_FOLLOWERS.arg(TEXT_UNAVAILABLE));
-        this->ui_.createdDateLabel->setText(TEXT_CREATED.arg(TEXT_UNAVAILABLE));
+        getIvr()->getUserData(
+            this->userName_,
+            [this, hack, userColorSuccess,
+             userColorFailure](const IvrResolve &userInfo) {
+                if (!hack.lock())
+                {
+                    return;
+                }
 
-        this->ui_.nameLabel->setText(this->userName_);
+                QString banReason = userInfo.banReason;
+                QString fullUserBio = userInfo.userBio;
 
-        this->ui_.userIDLabel->setText(u"ID " % TEXT_UNAVAILABLE);
-        this->ui_.userIDLabel->setProperty("copy-text",
-                                           TEXT_UNAVAILABLE.toString());
+                int maxLength = 50;
+
+                QString truncatedBio =
+                    fullUserBio.length() > maxLength
+                        ? fullUserBio.left(maxLength - 3) + "..."
+                        : fullUserBio;
+
+                this->ui_.followerCountLabel->setText(
+                    TEXT_FOLLOWERS.arg(TEXT_UNAVAILABLE));
+                this->ui_.createdDateLabel->setText(
+                    TEXT_CREATED.arg(TEXT_UNAVAILABLE));
+                if (getSettings()->showBannedReason)
+                {
+                    this->ui_.bannedReasonLabel->setText(banReason);
+                }
+                if (getSettings()->showUserBio)
+                {
+                    this->ui_.userBioLabel->setMouseTracking(true);
+                    this->ui_.userBioLabel->setToolTip(fullUserBio);
+                    this->ui_.userBioLabel->setText(QString("Bio: ") +
+                                                    truncatedBio);
+                }
+                if (getSettings()->showUserRoles)
+                {
+                    this->ui_.rolesLabel->setVisible(false);
+                }
+                this->ui_.nameLabel->setText(this->userName_);
+                this->ui_.userIDLabel->setText(QString("ID ") +
+                                               TEXT_UNAVAILABLE.toString());
+                this->ui_.userIDLabel->setProperty("copy-text",
+                                                   TEXT_UNAVAILABLE.toString());
+
+                if (getSettings()->showUserColor)
+                {
+                    getHelix()->getUserColor(this->userId_, userColorSuccess,
+                                             userColorFailure);
+                }
+            },
+            [] {});
     };
-    const auto onUserFetched = [this, hack,
-                                currentUser](const HelixUser &user) {
+
+    const auto onUserFetched = [this, hack, currentUser, userColorSuccess,
+                                userColorFailure](const HelixUser &user) {
         if (!hack.lock())
         {
             return;
@@ -909,8 +994,14 @@ void UserInfoPopup::updateUserData()
             user.displayName, this->underlyingChannel_->getName()));
         this->ui_.createdDateLabel->setText(
             TEXT_CREATED.arg(user.createdAt.section("T", 0, 0)));
+        this->ui_.bannedReasonLabel->setVisible(false);
         this->ui_.userIDLabel->setText(TEXT_USER_ID % user.id);
         this->ui_.userIDLabel->setProperty("copy-text", user.id);
+        if (getSettings()->showUserColor)
+        {
+            getHelix()->getUserColor(this->userId_, userColorSuccess,
+                                     userColorFailure);
+        }
 
         if (getApp()->getStreamerMode()->isEnabled() &&
             getSettings()->streamerModeHideUsercardAvatars)
@@ -982,26 +1073,102 @@ void UserInfoPopup::updateUserData()
                                                       followingSince);
                 }
 
-                if (subageInfo.isSubHidden)
-                {
-                    this->ui_.subageLabel->setText(
-                        "Subscription status hidden");
-                }
-                else if (subageInfo.isSubbed)
+                if (subageInfo.isSubbed && !subageInfo.isGifted)
                 {
                     this->ui_.subageLabel->setText(
                         QString("★ Tier %1 - Subscribed for %2 months")
                             .arg(subageInfo.subTier)
-                            .arg(subageInfo.totalSubMonths));
+                            .arg(subageInfo.isSubHidden
+                                     ? "(hidden)"
+                                     : QString::number(
+                                           subageInfo.totalSubMonths)));
+                }
+                else if (subageInfo.isSubbed && subageInfo.isGifted)
+                {
+                    this->ui_.subageLabel->setText(
+                        QString("★ Tier %1 - Subscribed for %2 months "
+                                "gifted by %3")
+                            .arg(subageInfo.subTier)
+                            .arg(subageInfo.isSubHidden
+                                     ? "(hidden)"
+                                     : QString::number(
+                                           subageInfo.totalSubMonths))
+                            .arg(subageInfo.giftedBy));
                 }
                 else if (subageInfo.totalSubMonths)
                 {
                     this->ui_.subageLabel->setText(
-                        QString("★ Previously subscribed for %1 months")
-                            .arg(subageInfo.totalSubMonths));
+                        QString("★ Previously subscribed for %1 months%2")
+                            .arg(subageInfo.totalSubMonths)
+                            .arg(subageInfo.isSubHidden ? " (hidden)" : ""));
                 }
             },
             [] {});
+
+        if (getSettings()->showUserBio || getSettings()->showUserRoles)
+        {
+            getIvr()->getUserData(
+                this->userName_,
+                [this, hack](const IvrResolve &userInfo) {
+                    if (!hack.lock())
+                    {
+                        return;
+                    }
+
+                    if (getSettings()->showUserBio)
+                    {
+                        QString fullUserBio = userInfo.userBio;
+
+                        int maxLength = 50;
+
+                        QString truncatedBio =
+                            fullUserBio.length() > maxLength
+                                ? fullUserBio.left(maxLength - 3) + "..."
+                                : fullUserBio;
+
+                        this->ui_.userBioLabel->setMouseTracking(true);
+                        this->ui_.userBioLabel->setToolTip(fullUserBio);
+                        this->ui_.userBioLabel->setText(QString("Bio: ") +
+                                                        truncatedBio);
+                    }
+
+                    if (getSettings()->showUserRoles)
+                    {
+                        QString rolesString = "";
+
+                        if (userInfo.isBot)
+                        {
+                            rolesString += "Bot ";
+                        }
+                        if (userInfo.isPartner)
+                        {
+                            rolesString += "Partner ";
+                        }
+                        if (userInfo.isAffiliate)
+                        {
+                            rolesString += "Affiliate ";
+                        }
+                        if (userInfo.isStaff)
+                        {
+                            rolesString += "Staff ";
+                        }
+                        if (userInfo.isExStaff)
+                        {
+                            rolesString += "Ex-Staff ";
+                        }
+
+                        if (!rolesString.isEmpty())
+                        {
+                            this->ui_.rolesLabel->setText(rolesString);
+                        }
+                        else
+                        {
+                            this->ui_.rolesLabel->setVisible(false);
+                        }
+                    }
+                },
+                [] {});
+        }
 
         // get pronouns
         if (getSettings()->showPronouns)

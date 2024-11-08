@@ -571,8 +571,6 @@ public:
         "/misc/scrollback/usercardLimit",
         1000,
     };
-    BoolSetting displaySevenTVAnimatedProfile = {
-        "/misc/displaySevenTVAnimatedProfile", true};
 
     EnumStringSetting<ChatSendProtocol> chatSendProtocol = {
         "/misc/chatSendProtocol", ChatSendProtocol::Default};
@@ -591,6 +589,16 @@ public:
                                                true};
     BoolSetting lockNotebookLayout = {"/misc/lockNotebookLayout", false};
     BoolSetting showPronouns = {"/misc/showPronouns", false};
+
+    /// Usercard
+
+    BoolSetting displaySevenTVAnimatedProfile = {
+        "/misc/displaySevenTVAnimatedProfile", true};
+
+    BoolSetting showBannedReason = {"/misc/bannedReason", true};
+    BoolSetting showUserRoles = {"/misc/userRoles", true};
+    BoolSetting showUserBio = {"/misc/userBio", false};
+    BoolSetting showUserColor = {"/misc/userColor", false};
 
     /// UI
 

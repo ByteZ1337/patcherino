@@ -1014,6 +1014,17 @@ void GeneralPage::initLayout(GeneralPageView &layout)
                      "the top and a positive to the bottom.")
         ->setSuffix("dp");
 
+    layout.addSubtitle("Usercard");
+    layout.addCheckbox("Show 7TV Animated Profile Picture",
+                       s.displaySevenTVAnimatedProfile);
+    layout.addCheckbox("Show banned reason", s.showBannedReason, false,
+                       "Show the reason a user was banned from Twitch.");
+    layout.addCheckbox(
+        "Show user roles", s.showUserRoles, false,
+        "Show the roles a user has on Twitch (eg. Staff, Partner).");
+    layout.addCheckbox("Show user bio", s.showUserBio);
+    layout.addCheckbox("Show user color", s.showUserColor);
+
     layout.addSubtitle("Miscellaneous");
 
     if (supportsIncognitoLinks())
@@ -1041,8 +1052,6 @@ void GeneralPage::initLayout(GeneralPageView &layout)
     }
 #endif
 
-    layout.addCheckbox("Show 7TV Animated Profile Picture",
-                       s.displaySevenTVAnimatedProfile);
     layout.addCheckbox(
         "Load AVIF images", s.allowAvifImages, false,
         "When enabled and an AVIF decoder is found, AVIF images will be "

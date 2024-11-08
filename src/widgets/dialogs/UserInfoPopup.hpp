@@ -91,9 +91,13 @@ private:
         Label *pronounsLabel = nullptr;
         Label *followerCountLabel = nullptr;
         Label *createdDateLabel = nullptr;
+        Label *bannedReasonLabel = nullptr;
+        Label *userBioLabel = nullptr;
         Label *userIDLabel = nullptr;
+        Label *userColorLabel = nullptr;
         Label *followageLabel = nullptr;
         Label *subageLabel = nullptr;
+        Label *rolesLabel = nullptr;
 
         QCheckBox *block = nullptr;
         QCheckBox *ignoreHighlights = nullptr;

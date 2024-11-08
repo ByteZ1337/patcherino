@@ -47,6 +47,17 @@ struct HelixUser {
     }
 };
 
+struct HelixColor {
+    QString userColor;
+
+    explicit HelixColor(const QString &color) : userColor(color) {}
+
+    explicit HelixColor(QJsonObject jsonObject)
+        : userColor(jsonObject.value("color").toString())
+    {
+    }
+};
+
 struct HelixGetChannelFollowersResponse {
     int total;
 
@@ -824,6 +835,11 @@ public:
                              ResultCallback<HelixUser> successCallback,
                              HelixFailureCallback failureCallback) = 0;
 
+    // https://dev.twitch.tv/docs/api/reference/#get-user-chat-color
+    virtual void getUserColor(QString userId,
+                              ResultCallback<HelixColor> successCallback,
+                              HelixFailureCallback failureCallback) = 0;
+
     // https://dev.twitch.tv/docs/api/reference/#get-channel-followers
     virtual void getChannelFollowers(
         QString broadcasterID,
@@ -1170,6 +1186,11 @@ public:
                        HelixFailureCallback failureCallback) final;
     void getUserById(QString userId, ResultCallback<HelixUser> successCallback,
                      HelixFailureCallback failureCallback) final;
+
+    // https://dev.twitch.tv/docs/api/reference/#get-user-chat-color
+    void getUserColor(QString userId,
+                      ResultCallback<HelixColor> successCallback,
+                      HelixFailureCallback failureCallback) final;
 
     // https://dev.twitch.tv/docs/api/reference/#get-channel-followers
     void getChannelFollowers(
